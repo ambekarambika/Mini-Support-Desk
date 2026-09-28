@@ -4,6 +4,17 @@ A lightweight, responsive support-ticket management application built for the **
 
 ---
 
+## Live Demo
+
+**Application:** https://mini-support-desk-sbqo.onrender.com/
+
+**API Documentation:** https://mini-support-desk-sbqo.onrender.com/docs
+
+The frontend and FastAPI backend are served from the same Render Web Service.
+PostgreSQL is hosted on Neon.
+
+---
+
 ## Requirements
 
 The table below outlines how each assignment requirement and enhancement is fulfilled in the Mini Support Desk:
@@ -136,30 +147,26 @@ Open  ──>  In Progress  ──>  Resolved  ──>  Restart  ──>  Open
 
 ## Architecture
 
-The Mini Support Desk uses a clean client-server architecture:
+The Mini Support Desk is deployed as a single Web Service on Render:
 
 ```text
-┌─────────────────────────┐
-│     Browser Client      │
-│  (HTML5 / CSS3 / JS)    │
-└────────────┬────────────┘
-             │  HTTP / JSON
-             ▼
-┌─────────────────────────┐
-│     FastAPI Backend     │
-│   (Python / Pydantic)   │
-└────────────┬────────────┘
-             │  SQLAlchemy ORM
-             ▼
-┌─────────────────────────┐
-│   PostgreSQL Database   │
-│  (Tickets & Activities) │
-└─────────────────────────┘
+┌──────────────────────────────────────────┐
+│      FastAPI Web Service on Render       │
+│  ┌──────────────────┬─────────────────┐  │
+│  │ Frontend HTML/CSS │  REST API (/api) │  │
+│  └──────────────────┴─────────────────┘  │
+└────────────────────┬─────────────────────┘
+                     │  SQLAlchemy ORM
+                     ▼
+┌──────────────────────────────────────────┐
+│             Neon PostgreSQL              │
+│        (Tickets & Activities)            │
+└──────────────────────────────────────────┘
 ```
 
-* **Frontend Layer**: Renders UI components, manages modal state, formats timestamps, and issues asynchronous requests to the API.
-* **Backend Layer**: Enforces business logic, validates payloads via Pydantic, controls state transitions, and manages history logging.
-* **Database Layer**: Persists `tickets` and `ticket_activities` tables in PostgreSQL.
+* **Frontend Layer**: Served by FastAPI as static assets. Vanilla JavaScript issues relative asynchronous requests (`/api/...`) to the backend.
+* **Backend Layer**: FastAPI handles routing, Pydantic validation, status transition rules, and history logging.
+* **Database Layer**: Neon PostgreSQL stores persistent `tickets` and `ticket_activities` tables via SQLAlchemy ORM.
 
 ---
 
@@ -169,15 +176,13 @@ The Mini Support Desk uses a clean client-server architecture:
 Mini Support Desk/
 ├── AGENTS.md
 ├── README.md
-├── requirements.txt
-├── .env
-├── .gitignore
 ├── backend/
 │   ├── database.py       # SQLAlchemy engine & session configuration
 │   ├── main.py           # FastAPI application & REST endpoints
 │   ├── models.py         # SQLAlchemy models (Ticket, TicketActivity)
 │   ├── schemas.py        # Pydantic validation schemas & Enums
-│   └── seed.py           # Database seeding script (10 sample tickets)
+│   ├── seed.py           # Database seeding script (10 sample tickets)
+│   └── requirements.txt  # Python dependencies
 ├── frontend/
 │   ├── index.html        # Main HTML structure & modals
 │   ├── css/
@@ -194,13 +199,12 @@ Mini Support Desk/
 
 ## How It Works
 
-1. **Page Load**: The browser loads `frontend/index.html` and executes `frontend/js/app.js`.
-2. **API Requests**: Asynchronous `fetch` calls request `/api/stats`, `/api/tickets/attention`, and `/api/tickets` from the FastAPI server.
-3. **Data Validation**: FastAPI validates incoming JSON requests against Pydantic schemas in `backend/schemas.py`.
-4. **Database Operations**: SQLAlchemy ORM queries or mutates records in PostgreSQL (`backend/models.py`).
-5. **Activity Audit**: Any ticket state mutation (creation, status update, priority update, resolution, or restart) automatically appends a row to `ticket_activities`.
-6. **JSON Response**: The backend returns JSON responses to the frontend.
-7. **Dynamic UI Rendering**: Vanilla JavaScript updates dashboard cards, pulse alerts, ticket lists, and modal details without page reloads.
+1. **Static Asset & Page Serving**: FastAPI serves `frontend/index.html` at the root `/` route, and serves frontend CSS (`/css/*`) and JavaScript (`/js/*`) assets.
+2. **API Requests**: Vanilla JavaScript sends API requests to the same FastAPI server using relative `/api/...` paths.
+3. **Data Validation**: FastAPI validates requests using Pydantic schemas in `backend/schemas.py`.
+4. **Database Operations**: SQLAlchemy ORM handles PostgreSQL database operations (`backend/models.py`).
+5. **Activity Audit**: Ticket lifecycle changes (creation, status update, priority update, resolution, or restart) create entries in `ticket_activities`.
+6. **JSON Response & Dynamic UI**: The API returns JSON and the frontend dynamically updates the UI.
 
 ---
 
@@ -269,7 +273,7 @@ source .venv/bin/activate
 
 ### 3. Install Dependencies
 ```bash
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
 ### 4. Configure Environment Variables
@@ -279,20 +283,20 @@ DATABASE_URL=postgresql://username:password@localhost:5432/database_name?sslmode
 ```
 *(You can connect to a local PostgreSQL instance or a cloud Neon PostgreSQL database by providing its connection URI).*
 
-### 5. Start Backend Server
+### 5. Start Application
 ```bash
 python -m uvicorn backend.main:app --port 8000 --reload
 ```
-The FastAPI backend will start at `http://127.0.0.1:8000`.
+The application will be available at:
+`http://127.0.0.1:8000/`
+
+The frontend is served by FastAPI from the same server.
 
 ### 6. Seed Sample Data
 In a separate terminal window, populate the database with 10 sample tickets:
 ```bash
 python -m backend.seed
 ```
-
-### 7. Launch Frontend
-Open `frontend/index.html` directly in your browser or serve it using any static file server (e.g. VS Code Live Server or `python -m http.server`).
 
 ---
 
@@ -310,6 +314,7 @@ http://127.0.0.1:8000/docs
 The application has undergone thorough API integration testing and browser UI verification:
 
 ### Automated & Integration Tests Covered
+* **Single Web Service Verification**: After deployment, the single-service configuration was verified with 17/17 integration checks covering frontend asset serving, database health, Swagger, ticket CRUD, validation, resolution workflow, resolved-ticket locking, restart behavior, and deletion.
 * **CRUD Ticket Operations**: Ticket creation, fetching, updating, and deletion.
 * **Search & Filters**: Title/client search, status filters, priority filters, and multi-filter combinations.
 * **Validation**: Input sanitation rejecting whitespace-only titles or missing required resolution text when resolving.
