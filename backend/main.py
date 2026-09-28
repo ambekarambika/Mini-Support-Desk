@@ -1,7 +1,10 @@
 from datetime import datetime, timezone, timedelta
 from typing import Optional
+from pathlib import Path
 from fastapi import FastAPI, Depends, HTTPException, status, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text, or_, func
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,6 +21,9 @@ from backend.schemas import (
     PriorityEnum
 )
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+FRONTEND_DIR = BASE_DIR / "frontend"
+
 def init_db():
     try:
         Base.metadata.create_all(bind=engine)
@@ -30,6 +36,15 @@ def init_db():
 init_db()
 
 app = FastAPI(title="Mini Support Desk API")
+
+# Mount static frontend directories for /css and /js
+if FRONTEND_DIR.exists():
+    css_dir = FRONTEND_DIR / "css"
+    js_dir = FRONTEND_DIR / "js"
+    if css_dir.exists():
+        app.mount("/css", StaticFiles(directory=css_dir), name="css")
+    if js_dir.exists():
+        app.mount("/js", StaticFiles(directory=js_dir), name="js")
 
 # Explicit CORS origins for local development (supports http origins and local file:// origin)
 app.add_middleware(
@@ -53,6 +68,9 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
     return {"message": "Mini Support Desk API is running"}
 
 @app.get("/health/db")
