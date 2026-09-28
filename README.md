@@ -8,7 +8,7 @@ A lightweight, responsive support-ticket management application built for the **
 
 The table below outlines how each assignment requirement and enhancement is fulfilled in the Mini Support Desk:
 
-| Assignment Requirement | Implementation |
+| Requirement | Implementation |
 | :--- | :--- |
 | **View 8–10 Sample Tickets** | Database seeded with 10 realistic support tickets, sorted descending by creation date. |
 | **Create Ticket** | Modal form to submit new tickets with title, client, description, and priority (defaults to `Open`). |
