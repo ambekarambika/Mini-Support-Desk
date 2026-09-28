@@ -4,7 +4,7 @@ A lightweight, responsive support-ticket management application built for the **
 
 ---
 
-## Assignment Requirements
+## Requirements
 
 The table below outlines how each assignment requirement and enhancement is fulfilled in the Mini Support Desk:
 
@@ -48,7 +48,7 @@ The table below outlines how each assignment requirement and enhancement is fulf
 
 ---
 
-## Additional Improvement — Ticket History & Resolution Summary
+## Improvement — Ticket History & Resolution Summary
 
 The primary additional improvement implemented for this project is **Ticket History & Resolution Summary**.
 
